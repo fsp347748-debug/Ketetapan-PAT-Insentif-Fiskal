@@ -120,13 +120,6 @@ if not df_simulasi.empty:
                 <div class="card-value">Rp {val_pot/1e9:,.2f} Milyar</div>
             </div>
         """, unsafe_allow_html=True)
-    with col_c3:
-        st.markdown(f"""
-            <div class="card-container">
-                <div class="card-title">🎀 Potensi Selisih / Efisiensi</div>
-                <div class="card-value">Rp {selisih/1e9:,.2f} Milyar</div>
-            </div>
-        """, unsafe_allow_html=True)
 
     st.write("---")
 
