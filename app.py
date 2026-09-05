@@ -82,19 +82,17 @@ st.title("👑 Dashboard Analisa Insentif Fiskal - Princess Edition 💖")
 st.markdown("### ✨ Simulasi Matriks Ketetapan & Potensi Realisasi Pendapatan")
 
 if not df_simulasi.empty:
-    # Widget Dropdown interaktif untuk memilih persentase insentif fiskal
+    # Widget Dropdown interaktif
     pilihan_diskon = st.selectbox(
         "🎯 Pilih Besaran Insentif Fiskal untuk Kartu Ringkasan:",
         options=['0%', '30%', '50%', '75%'],
         index=0
     )
 
-    # Ambil nilai berdasarkan pilihan dropdown
     val_ket = df_simulasi.loc[0, pilihan_diskon]
     val_pot = df_simulasi.loc[1, pilihan_diskon]
     selisih = val_ket - val_pot
 
-    # Kartu Ringkasan Interaktif di Atas yang berubah otomatis mengikuti dropdown
     col_c1, col_c2, col_c3 = st.columns(3)
     with col_c1:
         st.markdown(f"""
@@ -108,13 +106,6 @@ if not df_simulasi.empty:
             <div class="card-container">
                 <div class="card-title">✨ Potensi Realisasi ({pilihan_diskon})</div>
                 <div class="card-value">Rp {val_pot/1e9:,.2f} Milyar</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col_c3:
-        st.markdown(f"""
-            <div class="card-container">
-                <div class="card-title">🎀 Potensi Selisih / Efisiensi</div>
-                <div class="card-value">Rp {selisih/1e9:,.2f} Milyar</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -134,7 +125,7 @@ if not df_simulasi.empty:
     st.write("---")
 
     # ==========================================
-    # 4. GRAFIK KURVA (POSISI TEKS 75% AMAN & TIDAK KETUTUPAN)
+    # 4. GRAFIK KURVA (POSISI TEKS 75% DIGESER KE KANAN)
     # ==========================================
     st.markdown("#### 📈 Kurva Perbandingan Ketetapan vs Potensi Realisasi")
 
@@ -164,7 +155,7 @@ if not df_simulasi.empty:
         hovertemplate="<b>Potensi Realisasi (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
     ))
 
-    # 2. Ketetapan (Depan dengan format Milyar & posisi teks 75% digeser ke kiri-atas agar tidak mentok garis)
+    # 2. Ketetapan (Depan dengan posisi teks 75% digeser ke kanan-atas `top right` agar tidak menempel garis)
     text_labels = [f"Rp {val/1e9:.2f} Milyar" for val in val_ketetapan]
     
     fig.add_trace(go.Scatter(
@@ -173,8 +164,8 @@ if not df_simulasi.empty:
         mode='lines+markers+text',
         name=label_ketetapan,
         text=text_labels,
-        # Posisi teks diatur agar 75% posisinya ditarik ke atas-kiri (`top left`) dan diberi jarak aman
-        textposition=["top right", "top center", "top center", "top left"],
+        # Posisi titik 75% diubah ke `top right` agar bergeser ke kanan dan tidak bertabrakan dengan garis
+        textposition=["top right", "top center", "top center", "top right"],
         textfont=dict(color='#4A0E4E', size=12, family='Quicksand', weight='bold'),
         fill='tozeroy',
         fillcolor='rgba(199, 21, 133, 0.15)',
@@ -195,7 +186,7 @@ if not df_simulasi.empty:
             showgrid=True,
             gridcolor='rgba(230, 230, 230, 0.6)',
             tickfont=dict(color='#C71585', size=13, weight='bold'),
-            range=[-5, 82] # Memperlebar sumbu X kanan agar teks 75% punya banyak ruang kosong dan tidak mentok
+            range=[-5, 84] # Sumbu X kanan diperlebar lagi agar teks 75% punya ruang leluasa di sebelah kanan
         ),
         yaxis=dict(
             title='<b>Proyeksi Nilai (Rupiah)</b>',
@@ -214,7 +205,7 @@ if not df_simulasi.empty:
             bgcolor='rgba(255,255,255,0.9)'
         ),
         hovermode="x unified",
-        margin=dict(l=40, r=50, t=50, b=30)
+        margin=dict(l=40, r=60, t=50, b=30)
     )
 
     st.plotly_chart(fig, use_container_width=True)
