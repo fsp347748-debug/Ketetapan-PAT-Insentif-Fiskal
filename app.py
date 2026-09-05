@@ -86,3 +86,18 @@ if not df_simulasi.empty:
         st.warning("Struktur baris pada Google Sheet simulasi kurang dari 2 baris.")
 else:
     st.info("Belum ada data `df_simulasi` yang termuat dari Google Sheet.")
+
+
+if not df_simulasi.empty:
+    st.markdown("📋 **Tabel Matriks Proyeksi Berdasarkan Insentif Fiskal**")
+    
+    # Buat salinan DataFrame agar data aslinya tidak berubah untuk grafik
+    df_tampil = df_simulasi.copy()
+    
+    # Format kolom angka menjadi string berformat Rupiah
+    for col in df_tampil.columns:
+        if col not in ['Jumlah Ketetapan', 'KETERANGAN']:
+            df_tampil[col] = df_tampil[col].apply(lambda x: f"Rp {x:,.2f}" if pd.notnull(x) else "-")
+            
+    # Tampilkan menggunakan st.dataframe biasa (aman dari error styler)
+    st.dataframe(df_tampil, use_container_width=True)
