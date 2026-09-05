@@ -31,7 +31,7 @@ except Exception as e:
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
 # ==========================================
-# 2. VISUALISASI KURVA DENGAN FILL WARNA DI BELAKANG
+# 2. VISUALISASI KURVA DENGAN LABEL ANGKA JELAS
 # ==========================================
 st.markdown("### 👑 Kurva Ketetapan vs Potensi Realisasi Insentif Fiskal")
 
@@ -44,7 +44,8 @@ if not df_simulasi.empty:
             
     st.dataframe(df_tampil, use_container_width=True)
 
-    kategori_x = ['0%', '30%', '50%', '75%']
+    kategori_x = [0, 30, 50, 75]
+    kategori_labels = ['0%', '30%', '50%', '75%']
     
     row_ketetapan = df_simulasi.iloc[0] if len(df_simulasi) > 0 else None
     row_potensi = df_simulasi.iloc[1] if len(df_simulasi) > 1 else None
@@ -58,30 +59,35 @@ if not df_simulasi.empty:
 
         fig = go.Figure()
 
-        # 1. Garis & Area Belakang (Potensi Realisasi - Diberi fill warna transparan oranye/kuning lembut di bawahnya)
+        # 1. Potensi Realisasi (Belakang dengan fill warna oranye lembut)
         fig.add_trace(go.Scatter(
             x=kategori_x,
             y=val_potensi,
             mode='lines+markers',
             name=label_potensi,
             fill='tozeroy',
-            fillcolor='rgba(230, 126, 34, 0.12)',  # Arsiran transparan lembut di belakang
+            fillcolor='rgba(230, 126, 34, 0.1)',
             line=dict(shape='spline', color='#E67E22', width=3, dash='dash'),
-            marker=dict(size=8, color='#E67E22', line=dict(color='white', width=1)),
-            hovertemplate="<b>Potensi Realisasi:</b> Rp %{y:,.2f}<extra></extra>"
+            marker=dict(size=8, color='#E67E22'),
+            hovertemplate="<b>Potensi Realisasi (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
-        # 2. Garis & Area Depan (Ketetapan - Garis solid pink tua lengkap dengan arsiran pink di bawahnya)
+        # 2. Ketetapan (Depan dengan fill pink & MUNCULKAN LABEL ANGKA DI ATAS TITIK)
+        text_labels = [f"Rp {val/1e9:.2f}B" for val in val_ketetapan] # Format ringkas Milyar agar tidak menumpuk
+        
         fig.add_trace(go.Scatter(
             x=kategori_x,
             y=val_ketetapan,
-            mode='lines+markers',
+            mode='lines+markers+text',
             name=label_ketetapan,
+            text=text_labels,
+            textposition="top center", # Posisi teks tepat di atas titik bulatan kurva
+            textfont=dict(color='#C71585', size=11, family='Quicksand', weight='bold'),
             fill='tozeroy',
-            fillcolor='rgba(199, 21, 133, 0.18)',  # Arsiran pink transparan di depan
+            fillcolor='rgba(199, 21, 133, 0.15)',
             line=dict(shape='spline', color='#C71585', width=3.5),
-            marker=dict(size=8, color='#C71585', line=dict(color='white', width=1)),
-            hovertemplate="<b>Ketetapan:</b> Rp %{y:,.2f}<extra></extra>"
+            marker=dict(size=9, color='#C71585'),
+            hovertemplate="<b>Ketetapan (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
         fig.update_layout(
@@ -89,9 +95,12 @@ if not df_simulasi.empty:
             plot_bgcolor='rgba(255,255,255,1)',
             xaxis=dict(
                 title='<b>Besaran Insentif Fiskal (%)</b>',
+                tickmode='array',
+                tickvals=[0, 30, 50, 75],
+                ticktext=['0%', '30%', '50%', '75%'],
                 showgrid=True,
                 gridcolor='rgba(230, 230, 230, 0.5)',
-                tickfont=dict(color='#C71585', size=11, weight='bold')
+                tickfont=dict(color='#C71585', size=12, weight='bold')
             ),
             yaxis=dict(
                 title='<b>Proyeksi Nilai (Rp)</b>',
@@ -108,7 +117,7 @@ if not df_simulasi.empty:
                 bgcolor='rgba(255,255,255,0.8)'
             ),
             hovermode="x unified",
-            margin=dict(l=20, r=20, t=30, b=20)
+            margin=dict(l=20, r=20, t=40, b=20)
         )
 
         st.plotly_chart(fig, use_container_width=True)
