@@ -48,12 +48,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. LOAD & BERSIHKAN DATA DARI URL GOOGLE SHEETS
+# 1. LOAD & BERSIHKAN DATA (DENGAN CACHE TTL 3 MENIT)
 # ==========================================
 url_simulasi = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTs1RqydMwCiImnExjhqC1B_MlnxJaJO5m0UZXOsPPNSyGbphKBK6Wq0bBqpkmmXvkDUMh_LrUcX-Jy/pub?gid=0&single=true&output=csv"
 
-try:
-    df_raw = pd.read_csv(url_simulasi, header=None)
+@st.cache_data(ttl=300) # Otomatis refresh data setiap 3 menit (300 detik)
+def load_data(url):
+    df_raw = pd.read_csv(url, header=None)
     df_simulasi = pd.DataFrame({
         'Jenis': [df_raw.iloc[2, 0], df_raw.iloc[3, 0]],
         '0%': [df_raw.iloc[2, 1], df_raw.iloc[3, 1]],
@@ -71,17 +72,20 @@ try:
             .str.replace(',', '.', regex=False)
             .astype(float)
         )
+    return df_simulasi
+
+try:
+    df_simulasi = load_data(url_simulasi)
 except Exception as e:
     df_simulasi = pd.DataFrame()
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
-# Tombol Refresh Manual
+# Tombol Refresh Manual di bagian atas
 col_btn1, col_btn2 = st.columns([1, 4])
 with col_btn1:
     if st.button("🔄 Segarkan Data"):
-        st.cache_data.clear()
+        st.cache_data.clear() # Membersihkan cache agar mengambil data terbaru dari Google Sheets
         st.rerun()
-@st.cache_data(ttl=300)
 
 # ==========================================
 # 2. HEADER & DROPDOWN PILIHAN INSENTIF FISKAL
@@ -116,6 +120,13 @@ if not df_simulasi.empty:
                 <div class="card-value">Rp {val_pot/1e9:,.2f} Milyar</div>
             </div>
         """, unsafe_allow_html=True)
+    with col_c3:
+        st.markdown(f"""
+            <div class="card-container">
+                <div class="card-title">🎀 Potensi Selisih / Efisiensi</div>
+                <div class="card-value">Rp {selisih/1e9:,.2f} Milyar</div>
+            </div>
+        """, unsafe_allow_html=True)
 
     st.write("---")
 
@@ -133,7 +144,7 @@ if not df_simulasi.empty:
     st.write("---")
 
     # ==========================================
-    # 4. GRAFIK KURVA (POSISI TEKS 75% DIGESER KE KANAN)
+    # 4. GRAFIK KURVA
     # ==========================================
     st.markdown("#### 📈 Kurva Perbandingan Ketetapan vs Potensi Realisasi")
 
@@ -163,7 +174,7 @@ if not df_simulasi.empty:
         hovertemplate="<b>Potensi Realisasi (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
     ))
 
-    # 2. Ketetapan (Depan dengan posisi teks 75% digeser ke kanan-atas `top right` agar tidak menempel garis)
+    # 2. Ketetapan (Depan)
     text_labels = [f"Rp {val/1e9:.2f} Milyar" for val in val_ketetapan]
     
     fig.add_trace(go.Scatter(
@@ -172,7 +183,6 @@ if not df_simulasi.empty:
         mode='lines+markers+text',
         name=label_ketetapan,
         text=text_labels,
-        # Posisi titik 75% diubah ke `top right` agar bergeser ke kanan dan tidak bertabrakan dengan garis
         textposition=["top right", "top center", "top center", "top right"],
         textfont=dict(color='#4A0E4E', size=12, family='Quicksand', weight='bold'),
         fill='tozeroy',
@@ -194,7 +204,7 @@ if not df_simulasi.empty:
             showgrid=True,
             gridcolor='rgba(230, 230, 230, 0.6)',
             tickfont=dict(color='#C71585', size=13, weight='bold'),
-            range=[-5, 84] # Sumbu X kanan diperlebar lagi agar teks 75% punya ruang leluasa di sebelah kanan
+            range=[-5, 84]
         ),
         yaxis=dict(
             title='<b>Proyeksi Nilai (Rupiah)</b>',
