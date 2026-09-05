@@ -81,6 +81,7 @@ with col_btn1:
     if st.button("🔄 Segarkan Data"):
         st.cache_data.clear()
         st.rerun()
+@st.cache_data(ttl=300)
 
 # ==========================================
 # 2. HEADER & DROPDOWN PILIHAN INSENTIF FISKAL
