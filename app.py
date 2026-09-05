@@ -13,7 +13,6 @@ except Exception as e:
     df_simulasi = pd.DataFrame()
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
-
 # ==========================================
 # 4. SIMULASI & ANALISIS POTENSI KETETAPAN INSENTIF FISKAL
 # ==========================================
@@ -21,19 +20,21 @@ st.write("---")
 st.subheader("👑 Simulasi Matriks Ketetapan & Potensi Insentif Fiskal (Live dari Spreadsheet)")
 
 if not df_simulasi.empty:
-    # Tampilkan Tabel Matriks ala Spreadsheet
+    # Tampilkan Tabel Matriks (Menggunakan format string biasa agar 100% aman dari error styler)
     st.markdown("📋 **Tabel Matriks Proyeksi Berdasarkan Insentif Fiskal**")
     
-    # Format kolom numerik agar rapi saat ditampilkan
-    format_dict = {col: "Rp {:,.2f}" for col in df_simulasi.columns if col not in ['Jumlah Ketetapan', 'KETERANGAN']}
-    st.dataframe(df_simulasi.style.format(format_dict, na_rep='-'), use_container_width=True)
+    df_tampil = df_simulasi.copy()
+    for col in df_tampil.columns:
+        if col not in ['Jumlah Ketetapan', 'KETERANGAN']:
+            df_tampil[col] = df_tampil[col].apply(lambda x: f"Rp {x:,.2f}" if pd.notnull(x) else "-")
+            
+    st.dataframe(df_tampil, use_container_width=True)
 
     # Visualisasi Grafik dengan Efek Bayangan (Potensi di Belakang)
     st.write("#### 📊 Grafik Perbandingan Ketetapan Saat Ini vs Potensi (Efek Bayangan)")
 
     kategori_x = ['0%', '30%', '50%', '75%']
     
-    # Ambil baris pertama (Ketetapan Saat Ini) dan baris kedua (Potensi Ketetapan) dari spreadsheet
     row_saat_ini = df_simulasi.iloc[0] if len(df_simulasi) > 0 else None
     row_potensi = df_simulasi.iloc[1] if len(df_simulasi) > 1 else None
 
@@ -54,7 +55,7 @@ if not df_simulasi.empty:
             marker_color='rgba(255, 105, 180, 0.25)',  # Pink princess transparan
             marker_line_color='#FF1493',               # Pink tua menyala
             marker_line_width=2,
-            width=0.6,                                 # Dibuat sedikit lebih lebar agar jadi bayangan latar
+            width=0.6,                                 # Lebih lebar sebagai bayangan latar
             hovertemplate="<b>Potensi:</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
@@ -66,7 +67,7 @@ if not df_simulasi.empty:
             marker_color='#FF69B4',                    # Pink princess solid
             marker_line_color='#C71585',               # Deep pink border
             marker_line_width=1.5,
-            width=0.4,                                 # Lebih ramping di bagian depan
+            width=0.4,                                 # Lebih ramping di depan
             hovertemplate="<b>Saat Ini:</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
@@ -86,18 +87,3 @@ if not df_simulasi.empty:
         st.warning("Struktur baris pada Google Sheet simulasi kurang dari 2 baris.")
 else:
     st.info("Belum ada data `df_simulasi` yang termuat dari Google Sheet.")
-
-
-if not df_simulasi.empty:
-    st.markdown("📋 **Tabel Matriks Proyeksi Berdasarkan Insentif Fiskal**")
-    
-    # Buat salinan DataFrame agar data aslinya tidak berubah untuk grafik
-    df_tampil = df_simulasi.copy()
-    
-    # Format kolom angka menjadi string berformat Rupiah
-    for col in df_tampil.columns:
-        if col not in ['Jumlah Ketetapan', 'KETERANGAN']:
-            df_tampil[col] = df_tampil[col].apply(lambda x: f"Rp {x:,.2f}" if pd.notnull(x) else "-")
-            
-    # Tampilkan menggunakan st.dataframe biasa (aman dari error styler)
-    st.dataframe(df_tampil, use_container_width=True)
