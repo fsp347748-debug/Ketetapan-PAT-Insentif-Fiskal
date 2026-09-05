@@ -75,6 +75,13 @@ except Exception as e:
     df_simulasi = pd.DataFrame()
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
+# Tombol Refresh Manual
+col_btn1, col_btn2 = st.columns([1, 4])
+with col_btn1:
+    if st.button("🔄 Segarkan Data"):
+        st.cache_data.clear()
+        st.rerun()
+
 # ==========================================
 # 2. HEADER & DROPDOWN PILIHAN INSENTIF FISKAL
 # ==========================================
