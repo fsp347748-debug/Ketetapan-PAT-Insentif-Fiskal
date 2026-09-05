@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS agar nuansa pink princess makin hidup, ceria, dan lebar penuh
+# Custom CSS pink princess ceria & full width
 st.markdown("""
     <style>
     .main {
@@ -76,44 +76,52 @@ except Exception as e:
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
 # ==========================================
-# 2. HEADER & KARTU INTERAKTIF ATAS (SUPAYA TIDAK SEPI)
+# 2. HEADER & DROPDOWN PILIHAN INSENTIF FISKAL
 # ==========================================
 st.title("👑 Dashboard Analisa Insentif Fiskal - Princess Edition 💖")
 st.markdown("### ✨ Simulasi Matriks Ketetapan & Potensi Realisasi Pendapatan")
 
 if not df_simulasi.empty:
-    val_0_ket = df_simulasi.loc[0, '0%']
-    val_0_pot = df_simulasi.loc[1, '0%']
-    selisih_0 = val_0_ket - val_0_pot
+    # Widget Dropdown interaktif untuk memilih persentase insentif fiskal
+    pilihan_diskon = st.selectbox(
+        "🎯 Pilih Besaran Insentif Fiskal untuk Kartu Ringkasan:",
+        options=['0%', '30%', '50%', '75%'],
+        index=0
+    )
 
-    # Kartu Informasi Interaktif di Atas
+    # Ambil nilai berdasarkan pilihan dropdown
+    val_ket = df_simulasi.loc[0, pilihan_diskon]
+    val_pot = df_simulasi.loc[1, pilihan_diskon]
+    selisih = val_ket - val_pot
+
+    # Kartu Ringkasan Interaktif di Atas yang berubah otomatis mengikuti dropdown
     col_c1, col_c2, col_c3 = st.columns(3)
     with col_c1:
         st.markdown(f"""
             <div class="card-container">
-                <div class="card-title">👑 Ketetapan Awal (0%)</div>
-                <div class="card-value">Rp {val_0_ket/1e9:,.2f} Milyar</div>
+                <div class="card-title">👑 Ketetapan ({pilihan_diskon})</div>
+                <div class="card-value">Rp {val_ket/1e9:,.2f} Milyar</div>
             </div>
         """, unsafe_allow_html=True)
     with col_c2:
         st.markdown(f"""
             <div class="card-container">
-                <div class="card-title">✨ Potensi Realisasi (0%)</div>
-                <div class="card-value">Rp {val_0_pot/1e9:,.2f} Milyar</div>
+                <div class="card-title">✨ Potensi Realisasi ({pilihan_diskon})</div>
+                <div class="card-value">Rp {val_pot/1e9:,.2f} Milyar</div>
             </div>
         """, unsafe_allow_html=True)
     with col_c3:
         st.markdown(f"""
             <div class="card-container">
                 <div class="card-title">🎀 Potensi Selisih / Efisiensi</div>
-                <div class="card-value">Rp {selisih_0/1e9:,.2f} Milyar</div>
+                <div class="card-value">Rp {selisih/1e9:,.2f} Milyar</div>
             </div>
         """, unsafe_allow_html=True)
 
     st.write("---")
 
     # ==========================================
-    # 3. TABEL MATRIKS (DIBUAT FULL WIDTH / LEBAR)
+    # 3. TABEL MATRIKS (FULL WIDTH)
     # ==========================================
     st.markdown("📋 **Tabel Matriks Proyeksi Berdasarkan Insentif Fiskal**")
     
@@ -126,7 +134,7 @@ if not df_simulasi.empty:
     st.write("---")
 
     # ==========================================
-    # 4. GRAFIK KURVA PARABOLA INTERAKTIF (FULL WIDTH & MILYAR)
+    # 4. GRAFIK KURVA (POSISI TEKS 75% AMAN & TIDAK KETUTUPAN)
     # ==========================================
     st.markdown("#### 📈 Kurva Perbandingan Ketetapan vs Potensi Realisasi")
 
@@ -143,7 +151,7 @@ if not df_simulasi.empty:
 
     fig = go.Figure()
 
-    # 1. Potensi Realisasi (Belakang dengan fill warna oranye lembut)
+    # 1. Potensi Realisasi (Belakang)
     fig.add_trace(go.Scatter(
         x=kategori_x,
         y=val_potensi,
@@ -156,8 +164,8 @@ if not df_simulasi.empty:
         hovertemplate="<b>Potensi Realisasi (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
     ))
 
-    # 2. Ketetapan (Depan menggunakan format Milyar & warna kontras jelas)
-    text_labels = [f"Rp {val/1e9:.2f}Mlyr" for val in val_ketetapan]
+    # 2. Ketetapan (Depan dengan format Milyar & posisi teks 75% digeser ke kiri-atas agar tidak mentok garis)
+    text_labels = [f"Rp {val/1e9:.2f} Milyar" for val in val_ketetapan]
     
     fig.add_trace(go.Scatter(
         x=kategori_x,
@@ -165,8 +173,9 @@ if not df_simulasi.empty:
         mode='lines+markers+text',
         name=label_ketetapan,
         text=text_labels,
+        # Posisi teks diatur agar 75% posisinya ditarik ke atas-kiri (`top left`) dan diberi jarak aman
         textposition=["top right", "top center", "top center", "top left"],
-        textfont=dict(color='#4A0E4E', size=13, family='Quicksand', weight='bold'),
+        textfont=dict(color='#4A0E4E', size=12, family='Quicksand', weight='bold'),
         fill='tozeroy',
         fillcolor='rgba(199, 21, 133, 0.15)',
         line=dict(shape='spline', color='#C71585', width=4),
@@ -177,7 +186,7 @@ if not df_simulasi.empty:
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(255,255,255,0.9)',
-        height=520, # Grafik dibuat lebih tinggi dan luas
+        height=540,
         xaxis=dict(
             title='<b>Besaran Insentif Fiskal (%)</b>',
             tickmode='array',
@@ -186,14 +195,14 @@ if not df_simulasi.empty:
             showgrid=True,
             gridcolor='rgba(230, 230, 230, 0.6)',
             tickfont=dict(color='#C71585', size=13, weight='bold'),
-            range=[-4, 79]
+            range=[-5, 82] # Memperlebar sumbu X kanan agar teks 75% punya banyak ruang kosong dan tidak mentok
         ),
         yaxis=dict(
             title='<b>Proyeksi Nilai (Rupiah)</b>',
             showgrid=True,
             gridcolor='rgba(230, 230, 230, 0.6)',
             tickfont=dict(color='#C71585', size=12),
-            range=[0, 42e9],
+            range=[0, 43e9],
             tickformat=',.0f'
         ),
         legend=dict(
@@ -205,7 +214,7 @@ if not df_simulasi.empty:
             bgcolor='rgba(255,255,255,0.9)'
         ),
         hovermode="x unified",
-        margin=dict(l=40, r=40, t=50, b=30)
+        margin=dict(l=40, r=50, t=50, b=30)
     )
 
     st.plotly_chart(fig, use_container_width=True)
