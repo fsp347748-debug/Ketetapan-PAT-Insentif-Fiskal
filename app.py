@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 
 # ==========================================
@@ -33,10 +34,10 @@ except Exception as e:
     st.error(f"Gagal memuat atau memproses data dari spreadsheet: {e}")
 
 # ==========================================
-# 4. SIMULASI & ANALISIS KURVA PARABOLA INSENTIF FISKAL
+# 4. SIMULASI & ANALISIS KURVA PARABOLA HALUS
 # ==========================================
 st.write("---")
-st.subheader("👑 Simulasi Kurva Proyeksi & Potensi Insentif Fiskal (Live dari Spreadsheet)")
+st.subheader("👑 Simulasi Kurva Parabola Proyeksi & Potensi Insentif Fiskal")
 
 if not df_simulasi.empty:
     st.markdown("📋 **Tabel Matriks Proyeksi Berdasarkan Insentif Fiskal**")
@@ -47,52 +48,78 @@ if not df_simulasi.empty:
             
     st.dataframe(df_tampil, use_container_width=True)
 
-    # Visualisasi Grafik Kurva Parabola
-    st.write("#### 📈 Kurva Perbandingan Ketetapan Saat Ini vs Potensi")
+    st.write("#### 📈 Kurva Parabola Halus (Gap Sumbu X: 0, 10, 20, 30... 75)")
 
-    kategori_x = ['0%', '30%', '50%', '75%']
-    
     row_saat_ini = df_simulasi.iloc[0] if len(df_simulasi) > 0 else None
     row_potensi = df_simulasi.iloc[1] if len(df_simulasi) > 1 else None
 
     if row_saat_ini is not None and row_potensi is not None:
-        val_saat_ini = [row_saat_ini.get('0%', 0), row_saat_ini.get('30%', 0), row_saat_ini.get('50%', 0), row_saat_ini.get('75%', 0)]
-        val_potensi = [row_potensi.get('0%', 0), row_potensi.get('30%', 0), row_potensi.get('50%', 0), row_potensi.get('75%', 0)]
+        # Titik data asli
+        x_asli = np.array([0, 30, 50, 75])
         
+        y_saat_ini_asli = np.array([row_saat_ini.get('0%', 0), row_saat_ini.get('30%', 0), row_saat_ini.get('50%', 0), row_saat_ini.get('75%', 0)])
+        y_potensi_asli = np.array([row_potensi.get('0%', 0), row_potensi.get('30%', 0), row_potensi.get('50%', 0), row_potensi.get('75%', 0)])
+
+        # Membuat fitting kurva parabola halus (Polynomial Degree 2)
+        poly_saat_ini = np.polyfit(x_asli, y_saat_ini_asli, 2)
+        poly_potensi = np.polyfit(x_asli, y_potensi_asli, 2)
+
+        # Rentang sumbu X halus dengan gap per 5 atau 10 (0 sampai 75)
+        x_halus = np.linspace(0, 75, 76)
+        y_halus_saat_ini = np.polyval(poly_saat_ini, x_halus)
+        y_halus_potensi = np.polyval(poly_potensi, x_halus)
+
         label_bar1 = str(row_saat_ini.get('Jumlah Ketetapan', '1186')) + " (" + str(row_saat_ini.get('KETERANGAN', 'Ketetapan saat ini')) + ")"
         label_bar2 = str(row_potensi.get('Jumlah Ketetapan', '1268')) + " (" + str(row_potensi.get('KETERANGAN', 'Potensi')) + ")"
 
         fig_sim = go.Figure()
 
-        # 1. Kurva Bayangan / Potensi (Di belakang dengan garis putus-putus dan area transparan)
+        # 1. Kurva Parabola Bayangan / Potensi di belakang
         fig_sim.add_trace(go.Scatter(
-            x=kategori_x,
-            y=val_potensi,
-            mode='lines+markers',
+            x=x_halus,
+            y=y_halus_potensi,
+            mode='lines',
             name=label_bar2,
-            line=dict(shape='spline', color='#FF1493', width=3, dash='dash'),
-            marker=dict(size=8, color='#FF1493'),
+            line=dict(color='#FF1493', width=3, dash='dash'),
             hovertemplate="<b>Potensi:</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
-        # 2. Kurva Utama / Saat Ini (Di depan dengan garis solid pink princess dan efek isi area bawah kurva)
+        # 2. Kurva Parabola Utama (Saat Ini) dengan isi area bawah transparan
         fig_sim.add_trace(go.Scatter(
-            x=kategori_x,
-            y=val_saat_ini,
-            mode='lines+markers',
+            x=x_halus,
+            y=y_halus_saat_ini,
+            mode='lines',
             name=label_bar1,
-            fill='tozeroy',  # Mengisi area di bawah kurva agar terlihat estetik
-            fillcolor='rgba(255, 182, 193, 0.2)',
-            line=dict(shape='spline', color='#C71585', width=4),
-            marker=dict(size=10, color='#FF69B4', line=dict(color='#C71585', width=2)),
+            fill='tozeroy',
+            fillcolor='rgba(255, 182, 193, 0.25)',
+            line=dict(color='#C71585', width=4),
             hovertemplate="<b>Saat Ini:</b> Rp %{y:,.2f}<extra></extra>"
+        ))
+
+        # 3. Titik Spesifik (Marker) pada angka penting: 0%, 30%, 50%, 75%
+        fig_sim.add_trace(go.Scatter(
+            x=x_asli,
+            y=y_saat_ini_asli,
+            mode='markers+text',
+            text=[f"Rp {val/1e9:.1f}M" for val in y_saat_ini_asli],
+            textposition="top center",
+            textfont=dict(color='#C71585', size=11, family='Quicksand'),
+            marker=dict(size=10, color='#FF69B4', line=dict(color='#C71585', width=2)),
+            showlegend=False,
+            hovertemplate="Insentif %{x}%: Rp %{y:,.2f}<extra></extra>"
         ))
 
         fig_sim.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',  
-            plot_bgcolor='rgba(255,255,255,0.6)',
-            title=dict(text="<b>Simulasi Kurva Proyeksi Pendapatan Berdasarkan Insentif Fiskal</b>", font=dict(size=16, color='#C71585', family="Quicksand")),
-            xaxis=dict(title='<b>Besaran Insentif Fiskal (%)</b>', tickfont=dict(color='#C71585')),
+            plot_bgcolor='rgba(255,255,255,0.7)',
+            title=dict(text="<b>Simulasi Kurva Parabola Insentif Fiskal</b>", font=dict(size=16, color='#C71585', family="Quicksand")),
+            xaxis=dict(
+                title='<b>Besaran Insentif Fiskal (%)</b>',
+                tickmode='array',
+                tickvals=[0, 10, 20, 30, 40, 50, 60, 70, 75],
+                ticktext=['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '75%'],
+                tickfont=dict(color='#C71585', weight='bold')
+            ),
             yaxis=dict(title='<b>Proyeksi Nilai (Rp)</b>', tickfont=dict(color='#C71585')),
             legend=dict(bgcolor='#FFF0F5', bordercolor='#FF1493', borderwidth=1),
             hovermode="x unified"
