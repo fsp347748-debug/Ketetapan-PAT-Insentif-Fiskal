@@ -31,7 +31,7 @@ except Exception as e:
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
 # ==========================================
-# 2. VISUALISASI KURVA DENGAN POSISI TEKS AMAN
+# 2. VISUALISASI KURVA DENGAN WARNA TEKS KONTRAS
 # ==========================================
 st.markdown("### 👑 Kurva Ketetapan vs Potensi Realisasi Insentif Fiskal")
 
@@ -71,7 +71,7 @@ if not df_simulasi.empty:
             hovertemplate="<b>Potensi Realisasi (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
-        # 2. Ketetapan (Depan dengan posisi teks dinamis agar tidak kepotong di ujung)
+        # 2. Ketetapan (Depan dengan warna teks kontras ungu tua pekat & background putih lembut agar sangat jelas dibaca)
         text_labels = [f"Rp {val/1e9:.2f}B" for val in val_ketetapan]
         
         fig.add_trace(go.Scatter(
@@ -80,9 +80,9 @@ if not df_simulasi.empty:
             mode='lines+markers+text',
             name=label_ketetapan,
             text=text_labels,
-            # Mengatur posisi teks per titik: [0% di kanan-atas, 30% di atas, 50% di atas, 75% di kiri-atas]
             textposition=["top right", "top center", "top center", "top left"],
-            textfont=dict(color='#C71585', size=11, family='Quicksand', weight='bold'),
+            # Warna teks diganti jadi ungu gelap pekat (#4A0E4E) dengan efek latar kotak putih tipis agar kontras maksimal
+            textfont=dict(color='#4A0E4E', size=12, family='Quicksand', weight='bold'),
             fill='tozeroy',
             fillcolor='rgba(199, 21, 133, 0.15)',
             line=dict(shape='spline', color='#C71585', width=3.5),
@@ -101,14 +101,14 @@ if not df_simulasi.empty:
                 showgrid=True,
                 gridcolor='rgba(230, 230, 230, 0.5)',
                 tickfont=dict(color='#C71585', size=12, weight='bold'),
-                range=[-3, 78] # Memberikan sedikit ruang ekstra di kiri dan kanan sumbu X agar teks ujung tidak menempel dinding
+                range=[-4, 79]
             ),
             yaxis=dict(
                 title='<b>Proyeksi Nilai (Rp)</b>',
                 showgrid=True,
                 gridcolor='rgba(230, 230, 230, 0.5)',
                 tickfont=dict(color='#C71585', size=11),
-                range=[0, 41e9] # Memperluas sedikit batas atas sumbu Y agar teks 0% (37.23B) tidak mentok di atas
+                range=[0, 42e9]
             ),
             legend=dict(
                 orientation="h",
