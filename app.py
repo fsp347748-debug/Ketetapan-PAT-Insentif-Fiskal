@@ -31,7 +31,7 @@ except Exception as e:
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
 # ==========================================
-# 2. VISUALISASI KURVA DENGAN LABEL ANGKA JELAS
+# 2. VISUALISASI KURVA DENGAN POSISI TEKS AMAN
 # ==========================================
 st.markdown("### 👑 Kurva Ketetapan vs Potensi Realisasi Insentif Fiskal")
 
@@ -45,7 +45,6 @@ if not df_simulasi.empty:
     st.dataframe(df_tampil, use_container_width=True)
 
     kategori_x = [0, 30, 50, 75]
-    kategori_labels = ['0%', '30%', '50%', '75%']
     
     row_ketetapan = df_simulasi.iloc[0] if len(df_simulasi) > 0 else None
     row_potensi = df_simulasi.iloc[1] if len(df_simulasi) > 1 else None
@@ -59,7 +58,7 @@ if not df_simulasi.empty:
 
         fig = go.Figure()
 
-        # 1. Potensi Realisasi (Belakang dengan fill warna oranye lembut)
+        # 1. Potensi Realisasi (Belakang)
         fig.add_trace(go.Scatter(
             x=kategori_x,
             y=val_potensi,
@@ -72,8 +71,8 @@ if not df_simulasi.empty:
             hovertemplate="<b>Potensi Realisasi (%{x}):</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
-        # 2. Ketetapan (Depan dengan fill pink & MUNCULKAN LABEL ANGKA DI ATAS TITIK)
-        text_labels = [f"Rp {val/1e9:.2f}B" for val in val_ketetapan] # Format ringkas Milyar agar tidak menumpuk
+        # 2. Ketetapan (Depan dengan posisi teks dinamis agar tidak kepotong di ujung)
+        text_labels = [f"Rp {val/1e9:.2f}B" for val in val_ketetapan]
         
         fig.add_trace(go.Scatter(
             x=kategori_x,
@@ -81,7 +80,8 @@ if not df_simulasi.empty:
             mode='lines+markers+text',
             name=label_ketetapan,
             text=text_labels,
-            textposition="top center", # Posisi teks tepat di atas titik bulatan kurva
+            # Mengatur posisi teks per titik: [0% di kanan-atas, 30% di atas, 50% di atas, 75% di kiri-atas]
+            textposition=["top right", "top center", "top center", "top left"],
             textfont=dict(color='#C71585', size=11, family='Quicksand', weight='bold'),
             fill='tozeroy',
             fillcolor='rgba(199, 21, 133, 0.15)',
@@ -100,13 +100,15 @@ if not df_simulasi.empty:
                 ticktext=['0%', '30%', '50%', '75%'],
                 showgrid=True,
                 gridcolor='rgba(230, 230, 230, 0.5)',
-                tickfont=dict(color='#C71585', size=12, weight='bold')
+                tickfont=dict(color='#C71585', size=12, weight='bold'),
+                range=[-3, 78] # Memberikan sedikit ruang ekstra di kiri dan kanan sumbu X agar teks ujung tidak menempel dinding
             ),
             yaxis=dict(
                 title='<b>Proyeksi Nilai (Rp)</b>',
                 showgrid=True,
                 gridcolor='rgba(230, 230, 230, 0.5)',
-                tickfont=dict(color='#C71585', size=11)
+                tickfont=dict(color='#C71585', size=11),
+                range=[0, 41e9] # Memperluas sedikit batas atas sumbu Y agar teks 0% (37.23B) tidak mentok di atas
             ),
             legend=dict(
                 orientation="h",
@@ -117,7 +119,7 @@ if not df_simulasi.empty:
                 bgcolor='rgba(255,255,255,0.8)'
             ),
             hovermode="x unified",
-            margin=dict(l=20, r=20, t=40, b=20)
+            margin=dict(l=30, r=40, t=40, b=20)
         )
 
         st.plotly_chart(fig, use_container_width=True)
