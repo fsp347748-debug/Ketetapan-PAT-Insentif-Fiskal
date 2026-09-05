@@ -10,7 +10,7 @@ url_simulasi = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTs1RqydMwCiImnE
 try:
     df_raw = pd.read_csv(url_simulasi, header=None)
     df_simulasi = pd.DataFrame({
-        'Jumlah Ketetapan': [df_raw.iloc[2, 0], df_raw.iloc[3, 0]],
+        'Jenis': [df_raw.iloc[2, 0], df_raw.iloc[3, 0]],
         '0%': [df_raw.iloc[2, 1], df_raw.iloc[3, 1]],
         '30%': [df_raw.iloc[2, 2], df_raw.iloc[3, 2]],
         '50%': [df_raw.iloc[2, 3], df_raw.iloc[3, 3]],
@@ -31,9 +31,9 @@ except Exception as e:
     st.error(f"Gagal memuat data dari spreadsheet: {e}")
 
 # ==========================================
-# 2. VISUALISASI KURVA PERBANDINGAN
+# 2. VISUALISASI KURVA DENGAN FILL WARNA DI BELAKANG
 # ==========================================
-st.markdown("### 👑 Kurva Ketetapan Saat Ini vs Potensi Realisasi Insentif Fiskal")
+st.markdown("### 👑 Kurva Ketetapan vs Potensi Realisasi Insentif Fiskal")
 
 if not df_simulasi.empty:
     st.markdown("📋 **Tabel Matriks Proyeksi Berdasarkan Insentif Fiskal**")
@@ -46,40 +46,42 @@ if not df_simulasi.empty:
 
     kategori_x = ['0%', '30%', '50%', '75%']
     
-    row_saat_ini = df_simulasi.iloc[0] if len(df_simulasi) > 0 else None
+    row_ketetapan = df_simulasi.iloc[0] if len(df_simulasi) > 0 else None
     row_potensi = df_simulasi.iloc[1] if len(df_simulasi) > 1 else None
 
-    if row_saat_ini is not None and row_potensi is not None:
-        val_saat_ini = [row_saat_ini.get('0%', 0), row_saat_ini.get('30%', 0), row_saat_ini.get('50%', 0), row_saat_ini.get('75%', 0)]
+    if row_ketetapan is not None and row_potensi is not None:
+        val_ketetapan = [row_ketetapan.get('0%', 0), row_ketetapan.get('30%', 0), row_ketetapan.get('50%', 0), row_ketetapan.get('75%', 0)]
         val_potensi = [row_potensi.get('0%', 0), row_potensi.get('30%', 0), row_potensi.get('50%', 0), row_potensi.get('75%', 0)]
         
-        label_bar1 = str(row_saat_ini.get('Jumlah Ketetapan', '1186')) + " (Ketetapan Saat Ini)"
-        label_bar2 = str(row_potensi.get('Jumlah Ketetapan', '1268')) + " (Potensi Realisasi)"
+        label_ketetapan = str(row_ketetapan.get('Jenis', 'Ketetapan')) + " (" + str(row_ketetapan.get('KETERANGAN', 'Ketetapan saat ini')) + ")"
+        label_potensi = str(row_potensi.get('Jenis', 'Potensi Realisasi'))
 
         fig = go.Figure()
 
-        # 1. Garis Belakang (Potensi Realisasi - Garis putus-putus oranye/magenta lembut ala referensi)
+        # 1. Garis & Area Belakang (Potensi Realisasi - Diberi fill warna transparan oranye/kuning lembut di bawahnya)
         fig.add_trace(go.Scatter(
             x=kategori_x,
             y=val_potensi,
             mode='lines+markers',
-            name=label_bar2,
+            name=label_potensi,
+            fill='tozeroy',
+            fillcolor='rgba(230, 126, 34, 0.12)',  # Arsiran transparan lembut di belakang
             line=dict(shape='spline', color='#E67E22', width=3, dash='dash'),
             marker=dict(size=8, color='#E67E22', line=dict(color='white', width=1)),
             hovertemplate="<b>Potensi Realisasi:</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
-        # 2. Garis Depan (Ketetapan Saat Ini - Garis solid pink tua lengkap dengan arsiran transparan di bawahnya)
+        # 2. Garis & Area Depan (Ketetapan - Garis solid pink tua lengkap dengan arsiran pink di bawahnya)
         fig.add_trace(go.Scatter(
             x=kategori_x,
-            y=val_saat_ini,
+            y=val_ketetapan,
             mode='lines+markers',
-            name=label_bar1,
+            name=label_ketetapan,
             fill='tozeroy',
-            fillcolor='rgba(219, 112, 147, 0.15)', # Arsiran pink transparan
+            fillcolor='rgba(199, 21, 133, 0.18)',  # Arsiran pink transparan di depan
             line=dict(shape='spline', color='#C71585', width=3.5),
             marker=dict(size=8, color='#C71585', line=dict(color='white', width=1)),
-            hovertemplate="<b>Ketetapan Saat Ini:</b> Rp %{y:,.2f}<extra></extra>"
+            hovertemplate="<b>Ketetapan:</b> Rp %{y:,.2f}<extra></extra>"
         ))
 
         fig.update_layout(
